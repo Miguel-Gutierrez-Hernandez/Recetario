@@ -1,5 +1,5 @@
 import speech_recognition as sr
-import pyttsx3, pywhatkit, wikipedia, datetime, keyboard
+import pyttsx3, pywhatkit, wikipedia, datetime, keyboard, re
 from pygame import mixer
 from config import NAME
 
@@ -42,7 +42,7 @@ def listen():
     return command
 
 def run():
-    command = listen()
+    command = "alarma 0:36"
 
     if 'reproduce' in command:
         song = command.replace('reproduce', '').strip()
@@ -63,25 +63,33 @@ def run():
         talk("La hora actual es " + current_time)
     
     elif 'alarma' in command:
-        alarm_time = command.replace('alarma', '').strip()
+        # Extract HH:MM pattern directly from the command
+        match = re.search(r'\b(\d{1,2}:\d{2})\b', command)
 
-        try:
-            alarm_hour, alarm_minute = map(int, alarm_time.split(':')) # Separa la hora y los minutos hay que asegurarse de que el formato sea correcto
-            talk(f"Alarma configurada para las {alarm_hour:02d}:{alarm_minute:02d}.")
-            print(f"Alarma configurada para las {alarm_hour:02d}:{alarm_minute:02d}.")
+        if match:
+            alarm_time = datetime.datetime.strptime(match.group(1), "%H:%M").strftime("%H:%M")
+            try:
+                talk(f"Alarma configurada para las {alarm_time}.")
+                print(f"Alarma configurada para las {alarm_time}.")
 
-            while True:
-                now = datetime.datetime.now()
-                if now.hour == alarm_hour and now.minute == alarm_minute:
-                    talk("¡Es hora de despertar!")
-                    mixer.init()
-                    mixer.music.load('alarm_sound.mp3')  # Asegúrate de tener un archivo de sonido llamado 'alarm_sound.mp3' en el mismo directorio
-                    mixer.music.play()
-                    break
+                while True:
+                    if datetime.datetime.now().strftime("%H:%M") == alarm_time:
+                        talk("¡Es hora de despertar!")
+                        print("¡Es hora de despertar!")
+                        mixer.init()
+                        mixer.music.load('alarma.mp3')
+                        mixer.music.play()
+                        while mixer.music.get_busy():
+                            input("Pulsa ENTER para detener la alarma")
+                            mixer.music.stop()
+                        break
 
-        except ValueError:
-            talk("Lo siento, no pude entender la hora. Por favor, asegúrate de decirla en formato de 24 horas, por ejemplo, 18:30.")
-            print("Hora no válida. Por favor, intenta nuevamente.")
+            except ValueError:
+                talk("Lo siento, no pude entender la hora.")
+        else:
+            talk("No encontré una hora válida. Di por ejemplo: alarma a las 14:30.")
+            print("No se encontró hora en el comando.")
+
 
 if __name__ == '__main__':
     run()
