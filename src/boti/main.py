@@ -56,6 +56,32 @@ def run():
         info = wikipedia.summary(topic, sentences=1) # sentences=1 para obtener solo el primer párrafo, puedes ajustar este número según tus necesidades
         print(info)
         talk(info)
+    
+    elif 'hora' in command:
+        now = datetime.datetime.now()
+        current_time = now.strftime("%H:%M")
+        talk("La hora actual es " + current_time)
+    
+    elif 'alarma' in command:
+        alarm_time = command.replace('alarma', '').strip()
+
+        try:
+            alarm_hour, alarm_minute = map(int, alarm_time.split(':')) # Separa la hora y los minutos hay que asegurarse de que el formato sea correcto
+            talk(f"Alarma configurada para las {alarm_hour:02d}:{alarm_minute:02d}.")
+            print(f"Alarma configurada para las {alarm_hour:02d}:{alarm_minute:02d}.")
+
+            while True:
+                now = datetime.datetime.now()
+                if now.hour == alarm_hour and now.minute == alarm_minute:
+                    talk("¡Es hora de despertar!")
+                    mixer.init()
+                    mixer.music.load('alarm_sound.mp3')  # Asegúrate de tener un archivo de sonido llamado 'alarm_sound.mp3' en el mismo directorio
+                    mixer.music.play()
+                    break
+
+        except ValueError:
+            talk("Lo siento, no pude entender la hora. Por favor, asegúrate de decirla en formato de 24 horas, por ejemplo, 18:30.")
+            print("Hora no válida. Por favor, intenta nuevamente.")
 
 if __name__ == '__main__':
     run()
