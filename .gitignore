@@ -5,3 +5,6 @@ __pycache__/
 .vscode/
 dist/
 build/
+.DS_Store
+
+src/boti/data
