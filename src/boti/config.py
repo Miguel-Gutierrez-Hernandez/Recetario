@@ -16,3 +16,13 @@ FILE_PATH = {
     "receta": "data/Receta_Paella.pdf",
     "nota": "data/nota.txt"
 }
+
+# -------- PROGRAMS ------------------------------------------------------------
+PROGRAMS = {
+    "discord":     "/Applications/Discord.app",
+    "calculadora": "/System/Applications/Calculator.app",
+    "notas":       "/System/Applications/Notes.app",
+    "word":        "/Applications/Microsoft Word.app",
+    "excel":       "/Applications/Microsoft Excel.app",
+    "powerpoint":  "/Applications/Microsoft PowerPoint.app",
+}
