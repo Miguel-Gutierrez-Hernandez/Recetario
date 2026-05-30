@@ -1,32 +1,14 @@
-import speech_recognition as sr
+from plyer import stt
 from utils.talk import talk
-from config import NAME
-
-listener = sr.Recognizer()
 
 def listen():
     command = ""
-
     try:
-        with sr.Microphone() as source:
-            print("Escuchando...")
-            talk("Escuchando...")
-            audio = listener.listen(source)
-
-            command = listener.recognize_google(
-                audio,
-                language="es-ES"
-            )
-
-            command = command.lower()
-
-            if NAME in command:
-                command = command.replace(NAME, "")
-                command = command.strip()
-
-            print(command)
-
+        print("Escuchando...")
+        talk("Escuchando...")
+        stt.start()           # abre el reconocedor nativo de Android
+        command = stt.last_text.lower().strip()
+        print(command)
     except Exception as e:
         print("Error:", e)
-
     return command

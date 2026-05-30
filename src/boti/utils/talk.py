@@ -1,10 +1,5 @@
-import pyttsx3
-
-engine = pyttsx3.init()
-voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[92].id)
-
+from plyer import tts
 
 def talk(text):
-    engine.say(text)
-    engine.runAndWait()
+    print(text)
+    tts.speak(text)
