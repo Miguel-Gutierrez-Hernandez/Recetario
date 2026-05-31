@@ -12,5 +12,6 @@ COMMANDS = {
     "hora": time_now,
     "alarma": set_alarm,
     "abre": open_apps,
-    "archivo": open_file
+    "archivo": open_file,
+    "nota": write_note,
 }
