@@ -1,0 +1,47 @@
+========================================================================
+DOCUMENTO DE EJEMPLO - ARCHIVO DE TEXTO PLANO (.TXT)
+========================================================================
+
+Este es un archivo de texto de ejemplo diseñado para mostrar la estructura
+y legibilidad de un archivo .txt estándar. Los archivos de texto plano son
+ideales para notas, configuraciones, documentación rápida y almacenamiento
+de datos simples sin formato.
+
+------------------------------------------------------------------------
+1. INFORMACIÓN GENERAL
+------------------------------------------------------------------------
+Fecha de creación: 28 de mayo de 2026
+Autor: Asistente de IA
+Propósito: Demostración y pruebas de codificación UTF-8
+Estado: Completo
+
+------------------------------------------------------------------------
+2. CARACTERÍSTICAS PRINCIPALES DE LOS ARCHIVOS .TXT
+------------------------------------------------------------------------
+* Sin formato avanzado: No incluye negritas, cursivas ni colores nativos.
+* Portabilidad: Puede abrirse en prácticamente cualquier sistema operativo
+  (Windows, macOS, Linux, Android, iOS).
+* Ligereza: Ocupa el mínimo espacio posible en disco (bytes).
+* Compatibilidad: Ideal para código fuente, archivos Léame (README) y logs.
+
+------------------------------------------------------------------------
+3. EJEMPLO DE LISTA DE TAREAS (CHECKLIST)
+------------------------------------------------------------------------
+[X] Crear el archivo de ejemplo.
+[X] Validar la codificación de caracteres especiales (á, é, í, ó, ú, ñ, ¿, ¡).
+[ ] Compartir el archivo con el usuario.
+[ ] Archivar para futuras referencias.
+
+------------------------------------------------------------------------
+4. DATOS DE MUESTRA (FORMATO TABULAR SIMPLE)
+------------------------------------------------------------------------
+ID     | PRODUCTO             | CANTIDAD | PRECIO UNITARIO
+-------|----------------------|----------|----------------
+001    | Cuaderno A4          | 50       | $2.50
+002    | Bolígrafo Azul       | 200      | $0.50
+003    | Carpeta de Anillas   | 30       | $4.20
+004    | Marcador Fluorescente| 80       | $1.10
+
+========================================================================
+Fin del documento de ejemplo.
+========================================================================
