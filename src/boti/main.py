@@ -5,11 +5,11 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import flet as ft
-from config import NOMBRE, BG_DARK, BG_PANEL, BG_BOTI, TEXT_PRI, TEXT_ACC, TEXT_MUT, BORDER, DATA_DIR
+from config import (
+    NOMBRE, BG_DARK, BG_PANEL, BG_BOTI,
+    TEXT_PRI, TEXT_ACC, TEXT_MUT, BORDER, DATA_DIR, IS_ANDROID
+)
 from modules import recipes, write_note
-from views.chat_view import obtener_chat_view
-from views.recipes_view import obtener_recipes_view
-from views.notes_view import obtener_notes_view
 
 os.makedirs(DATA_DIR, exist_ok=True)
 recipes.inicializar()
@@ -23,10 +23,15 @@ def main(page: ft.Page):
 
     contenedor_principal = ft.Container(expand=True)
 
-    # ── Títulos del AppBar por sección ────────────────────
-    titulos = {0: "Chat", 1: "Recetario", 2: "Notas"}
+    titulos = {0: "Chat", 1: "Recetario", 2: "Notas", 3: "Ajustes"}
 
     def _cargar_seccion(indice: int):
+        # Importaciones aqui para evitar circulos
+        from views.chat_view     import obtener_chat_view
+        from views.recipes_view  import obtener_recipes_view
+        from views.notes_view    import obtener_notes_view
+        from views.settings_view import obtener_settings_view
+
         page.appbar.title.controls[1].value = titulos.get(indice, NOMBRE)
 
         if indice == 0:
@@ -35,6 +40,8 @@ def main(page: ft.Page):
             contenedor_principal.content = obtener_recipes_view(page)
         elif indice == 2:
             contenedor_principal.content = obtener_notes_view(page)
+        elif indice == 3:
+            contenedor_principal.content = obtener_settings_view(page)
 
         page.drawer.open = False
         page.update()
@@ -42,7 +49,7 @@ def main(page: ft.Page):
     def _cambiar_seccion(e):
         _cargar_seccion(e.control.selected_index)
 
-    # ── Menú lateral ──────────────────────────────────────
+    # ── Menu lateral ──────────────────────────────────────
     page.drawer = ft.NavigationDrawer(
         on_change=_cambiar_seccion,
         controls=[
@@ -51,7 +58,9 @@ def main(page: ft.Page):
                 content=ft.Row(
                     controls=[
                         ft.Container(
-                            content=ft.Text("✦", size=20, color=TEXT_ACC),
+                            content=ft.Text("B", size=20,
+                                            color=TEXT_ACC,
+                                            weight=ft.FontWeight.BOLD),
                             width=36, height=36,
                             bgcolor=BG_BOTI,
                             border_radius=10,
@@ -59,9 +68,11 @@ def main(page: ft.Page):
                         ),
                         ft.Column(
                             controls=[
-                                ft.Text(NOMBRE, size=16, weight=ft.FontWeight.BOLD,
+                                ft.Text(NOMBRE, size=16,
+                                        weight=ft.FontWeight.BOLD,
                                         color=TEXT_PRI),
-                                ft.Text("Asistente personal", size=11, color=TEXT_MUT),
+                                ft.Text("Asistente personal", size=11,
+                                        color=TEXT_MUT),
                             ],
                             spacing=0, tight=True,
                         ),
@@ -88,6 +99,11 @@ def main(page: ft.Page):
                 selected_icon=ft.Icons.NOTE,
                 label="Notas",
             ),
+            ft.NavigationDrawerDestination(
+                icon=ft.Icons.SETTINGS_OUTLINED,
+                selected_icon=ft.Icons.SETTINGS,
+                label="Ajustes",
+            ),
         ],
     )
 
@@ -100,7 +116,9 @@ def main(page: ft.Page):
                     bgcolor=BG_BOTI,
                     radius=18,
                 ),
-                ft.Text("Chat", size=18, weight=ft.FontWeight.BOLD, color=TEXT_PRI),
+                ft.Text("Chat", size=18,
+                        weight=ft.FontWeight.BOLD,
+                        color=TEXT_PRI),
             ],
             spacing=10,
         ),
@@ -108,7 +126,6 @@ def main(page: ft.Page):
         center_title=False,
     )
 
-    # Carga el chat por defecto
     _cargar_seccion(0)
 
     page.add(
@@ -121,4 +138,9 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.run(main)
+    if IS_ANDROID:
+        # Android usa ft.app(target=...)
+        ft.app(target=main)
+    else:
+        # Tu Mac usa ft.run(...) sin el texto 'target='
+        ft.run(main)

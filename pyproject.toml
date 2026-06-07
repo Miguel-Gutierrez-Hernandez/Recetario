@@ -1,12 +1,11 @@
-[project]
-name = "boti"
-version = "0.1.0"
-description = "Mi bot en Python"
-requires-python = ">=3.11"
+[tool.flet]
+app_name = "Boti"
+app_version = "1.0.0"
+org = "com.tuusuario"
+description = "Asistente personal Boti"
 
-[build-system]
-requires = ["setuptools>=61"]
-build-backend = "setuptools.build_meta"
-
-[tool.ruff]
-line-length = 88
+[tool.flet.android]
+permissions = [
+    "android.permission.INTERNET",
+    "android.permission.RECORD_AUDIO",
+]

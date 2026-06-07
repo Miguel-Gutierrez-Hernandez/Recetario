@@ -11,23 +11,24 @@ _notion_db_id   = None
 
 def _inicializar_notion():
     global _notion_cliente, _notion_db_id
-    from dotenv import load_dotenv
-    load_dotenv(override=True) 
-    
-    token = os.getenv("NOTION_TOKEN", "")
-    db_id = os.getenv("NOTION_RECIPES_DB", "")
-    
-    if not token or not db_id:
-        print("⚠️ Notion no configurado: Faltan variables de entorno.")
-        return
+    try:
+        from config import clave
+        token = clave("NOTION_TOKEN")
+        db_id = clave("NOTION_RECIPES_DB")
         
-    # Limpieza forzada de guiones para evitar errores de API de Notion
-    db_id = db_id.replace("-", "").strip()
-    
-    from notion_client import Client
-    _notion_cliente = Client(auth=token)
-    _notion_db_id   = db_id
-    print("✅ Cliente de Notion inicializado correctamente.")
+        if not token or not db_id:
+            print("⚠️ Notion no configurado: Faltan variables de entorno.")
+            return
+            
+        # Limpieza de guiones para que la API de Notion no falle en Android
+        db_id = db_id.replace("-", "").strip()
+        
+        from notion_client import Client
+        _notion_cliente = Client(auth=token)
+        _notion_db_id   = db_id
+        print("✅ Cliente de Notion inicializado correctamente.")
+    except Exception as e:
+        print(f"❌ Error al inicializar Notion en recetas: {e}")
 
 
 def _notion_disponible() -> bool:
