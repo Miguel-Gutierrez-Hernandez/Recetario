@@ -67,6 +67,18 @@ INTENCIONES = {
         "ejemplo": "alarma a las 8:30 / avísame en 5 minutos",
     },
 
+    # ── Wikipedia ─────────────────────────────────────────
+    "wikipedia": {
+        "claves": ["que es", "quien es", "qué es", "quién es",
+                   "cuentame sobre", "cuéntame sobre",
+                   "informacion sobre", "información sobre",
+                   "busca en wikipedia", "wikipedia",
+                   "hablame de", "háblame de",
+                   "dime que es", "dime qué es"],
+        "desc":   "Buscar en Wikipedia",
+        "ejemplo": "que es la fotosintesis",
+    },
+
     # ── Meta ──────────────────────────────────────────────
     "ayuda": {
         "claves": ["ayuda", "help", "qué puedes hacer", "comandos",

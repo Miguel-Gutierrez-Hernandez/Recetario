@@ -71,7 +71,7 @@ def obtener_recipes_view(page: ft.Page) -> ft.Column:
                                         icon=ft.Icons.DELETE_OUTLINE,
                                         icon_color="#ff4f4f",
                                         icon_size=18,
-                                        on_click=lambda e, i=rid, n=nombre: _borrar_receta(i, n),
+                                        on_click=lambda e, i=rid, n=nombre: _borrar_receta(i),
                                     ),
                                 ],
                                 spacing=0,
@@ -115,14 +115,8 @@ def obtener_recipes_view(page: ft.Page) -> ft.Column:
         if fila:
             _mostrar_detalle(*fila)
 
-    def _borrar_receta(rid: int, nombre: str):
-        import sqlite3
-        from config import DB_PATH
-        con = sqlite3.connect(DB_PATH)
-        cur = con.cursor()
-        cur.execute("DELETE FROM recetas WHERE id=?", (rid,))
-        con.commit()
-        con.close()
+    def _borrar_receta(rid: int):
+        recipes.borrar(rid)
         _mostrar_lista()
 
     # ── Vista: detalle de receta ──────────────────────────

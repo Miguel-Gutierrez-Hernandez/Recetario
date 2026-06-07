@@ -1,61 +1,126 @@
-# modules/recipes.py — Recetario con SQLite
-
+# modules/recipes.py — Recetario SQLite con sync y borrado en Notion
 import sqlite3
+import threading
+import os
 from config import DB_PATH
+
+# ── Notion ────────────────────────────────────────────────
+_notion_cliente = None
+_notion_db_id   = None
+
+
+def _inicializar_notion():
+    global _notion_cliente, _notion_db_id
+    from dotenv import load_dotenv
+    load_dotenv(override=True) 
+    
+    token = os.getenv("NOTION_TOKEN", "")
+    db_id = os.getenv("NOTION_RECIPES_DB", "")
+    
+    if not token or not db_id:
+        print("⚠️ Notion no configurado: Faltan variables de entorno.")
+        return
+        
+    # Limpieza forzada de guiones para evitar errores de API de Notion
+    db_id = db_id.replace("-", "").strip()
+    
+    from notion_client import Client
+    _notion_cliente = Client(auth=token)
+    _notion_db_id   = db_id
+    print("✅ Cliente de Notion inicializado correctamente.")
+
+
+def _notion_disponible() -> bool:
+    return _notion_cliente is not None and _notion_db_id is not None
+
+
+def _sync_a_notion(nombre: str, ingredientes: str, pasos: str, etiquetas: str, rid: int):
+    def _enviar():
+        try:
+            # Creamos la página en Notion
+            resultado = _notion_cliente.pages.create(
+                parent={"database_id": _notion_db_id},
+                properties={
+                    "Nombre": {
+                        "title": [{"text": {"content": nombre[:100]}}]
+                    },
+                    "Ingredientes": {
+                        "rich_text": [{"text": {"content": ingredientes[:2000]}}]
+                    },
+                    "Etiquetas": {
+                        "rich_text": [{"text": {"content": etiquetas[:200]}}]
+                    },
+                },
+                children=[
+                    {
+                        "object": "block",
+                        "type": "heading_2",
+                        "heading_2": {
+                            "rich_text": [{"type": "text", "text": {"content": "Preparacion"}}]
+                        }
+                    },
+                    {
+                        "object": "block",
+                        "type": "paragraph",
+                        "paragraph": {
+                            "rich_text": [{"type": "text", "text": {"content": pasos[:2000]}}]
+                        }
+                    },
+                ],
+            )
+            # Extraemos el ID único de la página que Notion nos devuelve
+            notion_page_id = resultado["id"]
+            
+            # Guardamos el ID en SQLite para poder borrarlo o editarlo en el futuro
+            con = sqlite3.connect(DB_PATH)
+            cur = con.cursor()
+            cur.execute(
+                "UPDATE recetas SET sincronizada = 1, notion_page_id = ? WHERE id = ?",
+                (notion_page_id, rid),
+            )
+            con.commit()
+            con.close()
+        except Exception as e:
+            print(f"❌ Error al sincronizar con Notion: {e}")
+            
+    threading.Thread(target=_enviar, daemon=True).start()
+
+
+def _borrar_de_notion(notion_page_id: str):
+    def _eliminar():
+        try:
+            # En la API de Notion, eliminar equivale a archivar la página
+            _notion_cliente.pages.update(
+                page_id=notion_page_id,
+                archived=True,
+            )
+            print("✨ Receta archivada con éxito en Notion.")
+        except Exception as e:
+            print(f"❌ Error al intentar borrar de Notion: {e}")
+            
+    threading.Thread(target=_eliminar, daemon=True).start()
+
+
+# ── SQLite ────────────────────────────────────────────────
 
 RECETAS_INICIALES = [
     (
-        "Tortilla española",
+        "Tortilla espanola",
         "4 huevos, 3 patatas medianas, 1 cebolla, aceite de oliva, sal",
-        "1. Pela y corta las patatas en láminas finas.\n"
-        "2. Fríe las patatas con la cebolla a fuego medio hasta que estén blandas (15 min).\n"
-        "3. Escurre el aceite. Bate los huevos con sal y mezcla con las patatas.\n"
-        "4. Cuaja en sartén a fuego medio-bajo tapada (4 min).\n"
-        "5. Da la vuelta con un plato y cuaja 3 min más.",
-        "huevo, patata, española, tradicional",
+        "1. Pela y corta las patatas en laminas finas.\n"
+        "2. Frie las patatas con la cebolla a fuego medio 15 min.\n"
+        "3. Escurre el aceite. Bate los huevos con sal y mezcla.\n"
+        "4. Cuaja en sarten tapada 4 min. Da la vuelta y cuaja 3 min mas.",
+        "huevo, patata, espanola, tradicional",
     ),
     (
         "Pasta al pesto",
-        "200g pasta, 1 manojo de albahaca, 2 dientes de ajo, "
-        "30g piñones, 50g parmesano, 60ml aceite de oliva, sal",
-        "1. Cuece la pasta en agua salada según el paquete.\n"
-        "2. Tritura albahaca, ajo, piñones y parmesano.\n"
-        "3. Añade aceite poco a poco hasta obtener una salsa homogénea.\n"
+        "200g pasta, albahaca, 2 ajos, 30g pinones, 50g parmesano, aceite, sal",
+        "1. Cuece la pasta en agua salada.\n"
+        "2. Tritura albahaca, ajo, pinones y parmesano.\n"
+        "3. Anade aceite hasta obtener salsa homogenea.\n"
         "4. Mezcla con la pasta escurrida y sirve.",
-        "pasta, italiana, rápida, albahaca",
-    ),
-    (
-        "Gazpacho",
-        "1kg tomates maduros, 1 pepino, 1 pimiento rojo, "
-        "1 diente de ajo, 4 cdas aceite de oliva, 2 cdas vinagre, sal",
-        "1. Trocea todos los vegetales.\n"
-        "2. Bate con batidora hasta obtener crema fina.\n"
-        "3. Añade aceite, vinagre y sal. Prueba y ajusta.\n"
-        "4. Cuela si quieres textura más fina.\n"
-        "5. Refrigera mínimo 1 hora antes de servir.",
-        "tomate, fría, verano, vegetariana, sin cocción",
-    ),
-    (
-        "Arroz con leche",
-        "200g arroz, 1L leche, 150g azúcar, 1 rama canela, "
-        "piel de limón, canela en polvo",
-        "1. Pon la leche a calentar con la canela y la piel de limón.\n"
-        "2. Cuando hierva añade el arroz y baja el fuego.\n"
-        "3. Cocina 30-35 min removiendo frecuentemente.\n"
-        "4. Añade el azúcar en los últimos 5 min.\n"
-        "5. Sirve frío con canela en polvo por encima.",
-        "postre, dulce, leche, arroz, tradicional",
-    ),
-    (
-        "Lentejas con verduras",
-        "300g lentejas, 1 zanahoria, 1 puerro, 1 patata, "
-        "2 dientes de ajo, 1 hoja de laurel, pimentón, aceite, sal",
-        "1. Pica todas las verduras en trozos medianos.\n"
-        "2. Sofríe ajo, puerro y zanahoria en aceite 5 min.\n"
-        "3. Añade las lentejas, la patata, el laurel y pimentón.\n"
-        "4. Cubre con agua y cocina 35-40 min a fuego medio.\n"
-        "5. Ajusta de sal antes de servir.",
-        "legumbre, cuchara, invierno, económica, vegetariana",
+        "pasta, italiana, rapida",
     ),
 ]
 
@@ -65,19 +130,32 @@ def _conexion():
 
 
 def inicializar():
-    """Crea la tabla y carga recetas iniciales si está vacía."""
+    """Crea la tabla, realiza migraciones y carga los datos iniciales."""
     con = _conexion()
     cur = con.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS recetas (
-            id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre       TEXT NOT NULL,
-            ingredientes TEXT,
-            pasos        TEXT,
-            etiquetas    TEXT,
-            creada       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre          TEXT NOT NULL,
+            ingredientes    TEXT,
+            pasos           TEXT,
+            etiquetas       TEXT,
+            sincronizada    INTEGER DEFAULT 0,
+            notion_page_id  TEXT DEFAULT NULL,
+            creada          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    
+    # Sistema robusto de migraciones por si la base de datos local es antigua
+    for col, defn in [
+        ("sincronizada",   "INTEGER DEFAULT 0"),
+        ("notion_page_id", "TEXT DEFAULT NULL"),
+    ]:
+        try:
+            cur.execute(f"ALTER TABLE recetas ADD COLUMN {col} {defn}")
+        except Exception:
+            pass
+
     cur.execute("SELECT COUNT(*) FROM recetas")
     if cur.fetchone()[0] == 0:
         cur.executemany(
@@ -86,18 +164,15 @@ def inicializar():
         )
     con.commit()
     con.close()
+    _inicializar_notion()
 
 
-# ── Comandos ──────────────────────────────────────────────────────────────────
+# ── Comandos ──────────────────────────────────────────────
 
 def buscar(texto: str) -> str:
-    """Busca recetas por nombre, ingredientes o etiquetas."""
     IGNORAR = {"receta", "de", "la", "el", "un", "una", "para", "con",
-               "cómo", "hacer", "hago", "preparo", "cocinar", "plato",
-               "cómo", "se", "hace"}
-
-    palabras = [p for p in texto.lower().split()
-                if p not in IGNORAR and len(p) > 2]
+               "como", "hacer", "hago", "preparo", "cocinar", "plato", "se", "hace"}
+    palabras = [p for p in texto.lower().split() if p not in IGNORAR and len(p) > 2]
 
     con = _conexion()
     cur = con.cursor()
@@ -105,9 +180,7 @@ def buscar(texto: str) -> str:
     if not palabras:
         cur.execute("SELECT nombre, ingredientes, pasos FROM recetas LIMIT 3")
     else:
-        cond = " OR ".join(
-            ["nombre LIKE ? OR ingredientes LIKE ? OR etiquetas LIKE ?"] * len(palabras)
-        )
+        cond = " OR ".join(["nombre LIKE ? OR ingredientes LIKE ? OR etiquetas LIKE ?"] * len(palabras))
         vals = [v for p in palabras for v in (f"%{p}%", f"%{p}%", f"%{p}%")]
         cur.execute(f"SELECT nombre, ingredientes, pasos FROM recetas WHERE {cond} LIMIT 3", vals)
 
@@ -115,50 +188,43 @@ def buscar(texto: str) -> str:
     con.close()
 
     if not filas:
-        return (f"No encontré ninguna receta con «{texto}».\n"
-                "Prueba con otro ingrediente o escribe «mis recetas» para ver todas.")
+        return "No encontre ninguna receta. Prueba mis recetas para ver todas."
 
     if len(filas) == 1:
         return _formato_receta(*filas[0])
 
     opciones = "\n".join(f"  {i+1}. {f[0]}" for i, f in enumerate(filas))
-    return f"Encontré varias recetas:\n{opciones}\n\nEscribe el nombre exacto para verla completa."
+    return f"Encontre varias recetas:\n{opciones}\n\nEscribe el nombre exacto para verla completa."
 
 
 def listar() -> str:
-    """Devuelve la lista completa de recetas."""
     con = _conexion()
     cur = con.cursor()
-    cur.execute("SELECT id, nombre, etiquetas FROM recetas ORDER BY nombre")
+    cur.execute("SELECT id, nombre, etiquetas, sincronizada FROM recetas ORDER BY nombre")
     filas = cur.fetchall()
     con.close()
 
     if not filas:
-        return "No hay recetas guardadas aún. Prueba «nueva receta» para añadir una."
+        return "No hay recetas guardadas aun."
 
-    lineas = ["📚 Recetario completo:\n"]
-    for fid, nombre, etiquetas in filas:
-        tag = f" — {etiquetas}" if etiquetas else ""
-        lineas.append(f"  {fid}. {nombre}{tag}")
+    lineas = ["Recetario completo:\n"]
+    for rid, nombre, etiquetas, sync in filas:
+        icono = "[N]" if sync else "[L]"
+        tag   = f" - {etiquetas}" if etiquetas else ""
+        lineas.append(f"  {rid}. {nombre}{tag} {icono}")
+
+    if _notion_disponible():
+        lineas.append("\n[N] = en Notion   [L] = solo local")
+
     return "\n".join(lineas)
 
 
-def añadir_interactivo() -> str:
-    """Mensaje guía para añadir una receta paso a paso desde la UI."""
-    return (
-        "Para añadir una receta escribe en este formato:\n\n"
-        "nueva receta\n"
-        "nombre: Nombre del plato\n"
-        "ingredientes: ingrediente1, ingrediente2...\n"
-        "pasos: 1. Paso uno. 2. Paso dos...\n"
-        "etiquetas: pasta, italiana, rápida"
-    )
-
-
 def guardar_desde_texto(texto: str) -> str:
-    """Parsea y guarda una receta desde texto con formato nombre/ingredientes/pasos."""
-    lineas = {l.split(":", 1)[0].strip().lower(): l.split(":", 1)[1].strip()
-              for l in texto.splitlines() if ":" in l}
+    lineas = {}
+    for l in texto.splitlines():
+        if ":" in l:
+            clave, _, valor = l.partition(":")
+            lineas[clave.strip().lower()] = valor.strip()
 
     nombre       = lineas.get("nombre", "")
     ingredientes = lineas.get("ingredientes", "")
@@ -166,24 +232,68 @@ def guardar_desde_texto(texto: str) -> str:
     etiquetas    = lineas.get("etiquetas", "")
 
     if not nombre or not pasos:
-        return "Faltan datos. Necesito al menos «nombre» y «pasos»."
+        return "Faltan datos. Necesito al menos nombre y pasos."
 
     con = _conexion()
     cur = con.cursor()
     cur.execute(
-        "INSERT INTO recetas (nombre, ingredientes, pasos, etiquetas) VALUES (?,?,?,?)",
+        "INSERT INTO recetas (nombre, ingredientes, pasos, etiquetas, sincronizada) "
+        "VALUES (?,?,?,?,0)",
         (nombre, ingredientes, pasos, etiquetas),
     )
+    rid = cur.lastrowid
     con.commit()
     con.close()
-    return f"✅ Receta «{nombre}» guardada correctamente."
+
+    if _notion_disponible():
+        _sync_a_notion(nombre, ingredientes, pasos, etiquetas, rid)
+        sufijo = " y enviada a Notion"
+    else:
+        sufijo = ""
+
+    return f"Receta {nombre} guardada{sufijo}."
 
 
-# ── Formato ───────────────────────────────────────────────────────────────────
+def borrar(rid: int) -> str:
+    """Borra de la base de datos local y elimina la página vinculada en Notion."""
+    con = _conexion()
+    cur = con.cursor()
+    cur.execute("SELECT nombre, notion_page_id FROM recetas WHERE id = ?", (rid,))
+    fila = cur.fetchone()
+
+    if not fila:
+        con.close()
+        return f"No encontre la receta #{rid}."
+
+    nombre, notion_page_id = fila
+    cur.execute("DELETE FROM recetas WHERE id = ?", (rid,))
+    con.commit()
+    con.close()
+
+    # Si la receta tenía una página en Notion asignada, la eliminamos también de allí
+    if notion_page_id and _notion_disponible():
+        _borrar_de_notion(notion_page_id)
+        sufijo = " y archivada en Notion"
+    else:
+        sufijo = ""
+
+    return f"Receta {nombre} borrada{sufijo}."
+
+
+def aniadir_interactivo() -> str:
+    return (
+        "Para anadir una receta escribe en este formato:\n\n"
+        "nueva receta\n"
+        "nombre: Nombre del plato\n"
+        "ingredientes: ingrediente1, ingrediente2...\n"
+        "pasos: 1. Paso uno. 2. Paso dos...\n"
+        "etiquetas: pasta, italiana, rapida"
+    )
+
 
 def _formato_receta(nombre: str, ingredientes: str, pasos: str) -> str:
     return (
-        f"🍳 {nombre}\n\n"
+        f"Receta: {nombre}\n\n"
         f"Ingredientes:\n{ingredientes}\n\n"
-        f"Preparación:\n{pasos}"
+        f"Preparacion:\n{pasos}"
     )

@@ -7,7 +7,7 @@ from config import (
 )
 from modules.brain import responder
 from modules import time_tools
-from utils import listener
+from utils import listener, talk
 
 
 # ── Componentes reutilizables ─────────────────────────────
@@ -71,23 +71,43 @@ def obtener_chat_view(page: ft.Page) -> ft.Column:
     )
     mensajes.controls.append(fila(BIENVENIDA, es_usuario=False))
 
-    # Alarmas → UI
+    # ── Botón silencio en el AppBar ───────────────────────
+    _voz_activa = {"valor": True}
+
+    def _toggle_voz(e):
+        _voz_activa["valor"] = not _voz_activa["valor"]
+        talk.silenciar(_voz_activa["valor"])
+        btn_silencio.icon = (ft.Icons.VOLUME_UP if _voz_activa["valor"]
+                             else ft.Icons.VOLUME_OFF)
+        btn_silencio.icon_color = TEXT_ACC if _voz_activa["valor"] else "#ff4f4f"
+        page.update()
+
+    btn_silencio = ft.IconButton(
+        icon=ft.Icons.VOLUME_UP,
+        icon_color=TEXT_ACC,
+        icon_size=20,
+        tooltip="Silenciar voz de Boti",
+        on_click=_toggle_voz,
+    )
+    if page.appbar:
+        page.appbar.actions = [btn_silencio]
+
+    # Alarmas: las muestra y las lee en voz alta
     time_tools.on_alarma = lambda msg: (
         mensajes.controls.append(fila(msg, es_usuario=False)),
+        talk.hablar(msg),
         page.update(),
     )
 
-    # ── Botones ───────────────────────────────────────────
-
+    # ── Botones de la barra de entrada ────────────────────
     btn_voz = ft.IconButton(
         icon=ft.Icons.MIC,
         icon_color=TEXT_ACC,
         icon_size=24,
         tooltip="Hablar",
         visible=True,
-        on_click=lambda e: None,  # se reasigna abajo
+        on_click=lambda e: None,
     )
-    # Container en lugar de IconButton para evitar el bug de ButtonStyle en Flet 0.85
     btn_enviar = ft.Container(
         content=ft.Icon(ft.Icons.SEND, color=ft.Colors.WHITE, size=18),
         bgcolor="#2e5bff",
@@ -96,7 +116,7 @@ def obtener_chat_view(page: ft.Page) -> ft.Column:
         alignment=ft.Alignment(0, 0),
         visible=False,
         ink=True,
-        on_click=lambda e: None,  # se reasigna abajo
+        on_click=lambda e: None,
     )
     btn_escuchando = ft.IconButton(
         icon=ft.Icons.GRAPHIC_EQ,
@@ -125,7 +145,7 @@ def obtener_chat_view(page: ft.Page) -> ft.Column:
         content_padding=ft.Padding(left=16, right=16, top=12, bottom=12),
     )
 
-    # ── Helpers de estado ────────────────────────────────
+    # ── Helpers de estado de botones ─────────────────────
     def _mostrar_boton_voz():
         btn_voz.visible        = True
         btn_enviar.visible     = False
@@ -144,7 +164,7 @@ def obtener_chat_view(page: ft.Page) -> ft.Column:
         btn_escuchando.visible = True
         page.update()
 
-    # ── Envío (texto o voz) ───────────────────────────────
+    # ── Envio de mensaje ──────────────────────────────────
     def _enviar(texto: str | None = None):
         texto = (texto or campo.value or "").strip()
         if not texto:
@@ -164,10 +184,11 @@ def obtener_chat_view(page: ft.Page) -> ft.Column:
                 mensajes.controls.remove(t)
             mensajes.controls.append(fila(respuesta, es_usuario=False))
             page.update()
+            talk.hablar(respuesta)   # lee la respuesta en voz alta
 
         threading.Thread(target=procesar, daemon=True).start()
 
-    # ── Control dinámico del botón ────────────────────────
+    # ── Control dinamico del boton ────────────────────────
     def _on_campo_cambio(e):
         if len((campo.value or "").strip()) > 0:
             _mostrar_boton_enviar()
@@ -178,18 +199,18 @@ def obtener_chat_view(page: ft.Page) -> ft.Column:
     campo.on_submit  = lambda e: _enviar()
     btn_enviar.on_click = lambda e: _enviar()
 
-    # ── Callbacks del listener (async para page.run_task) ─
+    # ── Callbacks del listener de voz ────────────────────
     async def _al_iniciar_escucha():
-        mensajes.controls.append(fila("🎙️ Escuchando...", es_usuario=True))
+        mensajes.controls.append(fila("Escuchando...", es_usuario=True))
         _mostrar_escuchando()
 
     async def _al_reconocer(texto: str):
-        _quitar_ultimo_si(mensajes, "🎙️ Escuchando...")
+        _quitar_ultimo_si(mensajes, "Escuchando...")
         _enviar(texto)
 
     async def _al_error_voz(msg: str):
-        _quitar_ultimo_si(mensajes, "🎙️ Escuchando...")
-        mensajes.controls.append(fila(f"⚠️ {msg}", es_usuario=False))
+        _quitar_ultimo_si(mensajes, "Escuchando...")
+        mensajes.controls.append(fila(f"{msg}", es_usuario=False))
         _mostrar_boton_voz()
 
     async def _al_fin_escucha():
@@ -254,7 +275,6 @@ def obtener_chat_view(page: ft.Page) -> ft.Column:
 # ── Utilidad ──────────────────────────────────────────────
 
 def _quitar_ultimo_si(lista: ft.ListView, texto: str):
-    """Elimina el último mensaje si su contenido coincide con 'texto'."""
     if not lista.controls:
         return
     ultimo = lista.controls[-1]
