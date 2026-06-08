@@ -13,17 +13,16 @@ ES_MOVIL = IS_ANDROID  # Alias para compatibilidad con el enrutador de main.py
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 if IS_ANDROID:
-    # Directorio de datos seguro y nativo asignado por Flet en Android
-    DATA_DIR = os.getenv("FLET_APP_STORAGE_DATA", os.path.expanduser("~"))
+    # 📌 Ruta interna blindada para Android donde la app tiene permisos totales de escritura
+    DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "data")
 else:
-    # En tu Mac creará una carpeta 'data' en la raíz del proyecto para no ensuciar 'src'
-    # Subimos dos niveles desde src/boti/ hacia Recetario/
+    # Tu ruta local de desarrollo en Mac
     RAIZ_PROYECTO = os.path.dirname(os.path.dirname(BASE_DIR))
     DATA_DIR = os.path.join(RAIZ_PROYECTO, "data")
 
-DB_PATH    = os.path.join(DATA_DIR, "boti.db")
-CLAVES_PATH = os.path.join(DATA_DIR, "claves.json")  # donde Android guarda las API keys
-ALARMA_MP3 = os.path.join(DATA_DIR, "alarma.mp3")
+DB_PATH     = os.path.join(DATA_DIR, "boti.db")
+CLAVES_PATH = os.path.join(DATA_DIR, "claves.json")
+ALARMA_MP3  = os.path.join(DATA_DIR, "alarma.mp3")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 

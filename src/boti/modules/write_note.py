@@ -12,16 +12,22 @@ def _inicializar_notion():
         token = clave("NOTION_TOKEN")
         db_id = clave("NOTION_NOTES_DB")
         
+        # 📌 SI NO HAY CLAVES (Como pasa en Android al principio), ABORTAMOS AL INSTANTE
         if not token or not db_id:
+            _notion_cliente = None
+            _notion_db_id = None
+            print("⚠️ Notion no configurado. Trabajando en modo local.")
             return
             
         db_id = db_id.replace("-", "").strip()
-        
         from notion_client import Client
         _notion_cliente = Client(auth=token)
         _notion_db_id   = db_id
-    except Exception:
-        pass
+        print("✅ Cliente de Notion inicializado correctamente.")
+    except Exception as e:
+        _notion_cliente = None
+        _notion_db_id = None
+        print(f"❌ Error al inicializar Notion: {e}")
 
 def _notion_disponible() -> bool:
     return _notion_cliente is not None and _notion_db_id is not None

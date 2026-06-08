@@ -14,21 +14,24 @@ def _inicializar_notion():
     try:
         from config import clave
         token = clave("NOTION_TOKEN")
-        db_id = clave("NOTION_RECIPES_DB")
+        db_id = clave("NOTION_NOTES_DB")
         
+        # 📌 SI NO HAY CLAVES (Como pasa en Android al principio), ABORTAMOS AL INSTANTE
         if not token or not db_id:
-            print("⚠️ Notion no configurado: Faltan variables de entorno.")
+            _notion_cliente = None
+            _notion_db_id = None
+            print("⚠️ Notion no configurado. Trabajando en modo local.")
             return
             
-        # Limpieza de guiones para que la API de Notion no falle en Android
         db_id = db_id.replace("-", "").strip()
-        
         from notion_client import Client
         _notion_cliente = Client(auth=token)
         _notion_db_id   = db_id
         print("✅ Cliente de Notion inicializado correctamente.")
     except Exception as e:
-        print(f"❌ Error al inicializar Notion en recetas: {e}")
+        _notion_cliente = None
+        _notion_db_id = None
+        print(f"❌ Error al inicializar Notion: {e}")
 
 
 def _notion_disponible() -> bool:

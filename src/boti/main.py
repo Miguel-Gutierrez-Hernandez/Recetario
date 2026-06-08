@@ -11,22 +11,23 @@ from config import (
 )
 from modules import recipes, write_note
 
-os.makedirs(DATA_DIR, exist_ok=True)
-recipes.inicializar()
-write_note.inicializar()
-
 
 def main(page: ft.Page):
     page.title = NOMBRE
     page.bgcolor = BG_DARK
     page.padding = 0
 
+    # ── Inicializaciones seguras dentro del ciclo de vida de Flet ──
+    os.makedirs(DATA_DIR, exist_ok=True)
+    recipes.inicializar()
+    write_note.inicializar()
+
     contenedor_principal = ft.Container(expand=True)
 
     titulos = {0: "Chat", 1: "Recetario", 2: "Notas", 3: "Ajustes"}
 
     def _cargar_seccion(indice: int):
-        # Importaciones aqui para evitar circulos
+        # Importaciones diferidas para evitar referencias circulares
         from views.chat_view     import obtener_chat_view
         from views.recipes_view  import obtener_recipes_view
         from views.notes_view    import obtener_notes_view
@@ -126,6 +127,7 @@ def main(page: ft.Page):
         center_title=False,
     )
 
+    # Cargamos el Chat inicialmente
     _cargar_seccion(0)
 
     page.add(
@@ -137,6 +139,7 @@ def main(page: ft.Page):
     page.update()
 
 
+# ── Ejecución unificada estándar de Flet ──────────────────
 if __name__ == "__main__":
     if IS_ANDROID:
         # Android usa ft.app(target=...)
