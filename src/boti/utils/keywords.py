@@ -1,4 +1,4 @@
-# keywords.py — Diccionario de intenciones y palabras clave
+ # keywords.py — Diccionario de intenciones y palabras clave
 
 # Cada intención tiene:
 #   "claves"   → palabras que la activan (cualquiera es suficiente)
@@ -77,6 +77,32 @@ INTENCIONES = {
                    "dime que es", "dime qué es"],
         "desc":   "Buscar en Wikipedia",
         "ejemplo": "que es la fotosintesis",
+    },
+
+    # ── YouTube ───────────────────────────────────────────
+    "youtube": {
+        "claves": ["youtube", "pon en youtube", "busca en youtube",
+                   "abre youtube", "reproduce en youtube", "video de"],
+        "desc":   "Buscar en YouTube",
+        "ejemplo": "pon en youtube flamenco",
+    },
+
+    # ── Spotify ───────────────────────────────────────────
+    "spotify": {
+        "claves": ["spotify", "pon en spotify", "busca en spotify",
+                   "abre spotify", "reproduce en spotify",
+                   "pon musica de", "busca musica de"],
+        "desc":   "Buscar musica o playlist en Spotify",
+        "ejemplo": "pon en spotify Bad Bunny / abre playlist rock",
+    },
+
+    # ── WhatsApp ──────────────────────────────────────────
+    "whatsapp": {
+        "claves": ["whatsapp", "manda whatsapp", "envia whatsapp",
+                   "mensaje a", "manda mensaje", "envia mensaje",
+                   "escribe a"],
+        "desc":   "Enviar mensaje por WhatsApp",
+        "ejemplo": "manda whatsapp a Juan que llego tarde",
     },
 
     # ── Meta ──────────────────────────────────────────────

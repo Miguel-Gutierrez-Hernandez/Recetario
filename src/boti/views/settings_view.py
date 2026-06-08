@@ -37,14 +37,19 @@ def obtener_settings_view(page: ft.Page) -> ft.Column:
     f_notion_notes_db   = _campo("Notion - ID base de datos Notas", "NOTION_NOTES_DB")
     f_notion_recipes_db = _campo("Notion - ID base de datos Recetas", "NOTION_RECIPES_DB")
 
+    f_spotify_id     = _campo("Spotify Client ID", "SPOTIFY_CLIENT_ID")
+    f_spotify_secret = _campo("Spotify Client Secret", "SPOTIFY_CLIENT_SECRET", password=True)
+
     def _guardar(e):
         msg_ok.value    = ""
         msg_error.value = ""
 
         nuevas = {
-            "NOTION_TOKEN":       f_notion_token.value.strip(),
-            "NOTION_NOTES_DB":    f_notion_notes_db.value.strip(),
-            "NOTION_RECIPES_DB":  f_notion_recipes_db.value.strip(),
+            "NOTION_TOKEN":          f_notion_token.value.strip(),
+            "NOTION_NOTES_DB":       f_notion_notes_db.value.strip(),
+            "NOTION_RECIPES_DB":     f_notion_recipes_db.value.strip(),
+            "SPOTIFY_CLIENT_ID":     f_spotify_id.value.strip(),
+            "SPOTIFY_CLIENT_SECRET": f_spotify_secret.value.strip(),
         }
 
         # Valida que los IDs de Notion tengan formato correcto (32 chars hex)
@@ -125,6 +130,10 @@ def obtener_settings_view(page: ft.Page) -> ft.Column:
                             f_notion_token,
                             f_notion_notes_db,
                             f_notion_recipes_db,
+                        ]),
+                        _seccion("Spotify (opcional)", [
+                            f_spotify_id,
+                            f_spotify_secret,
                         ]),
                         msg_ok,
                         msg_error,

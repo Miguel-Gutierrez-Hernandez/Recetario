@@ -1,20 +1,24 @@
-# modules/brain.py — Cerebro de Boti (sin LLM, 100% local)
+# modules/brain.py — Cerebro de Boti
 
 from utils.keywords import detectar_intencion, texto_ayuda
 from modules import recipes, write_note, time_tools
 from modules.search_wikipedia import buscar as wiki_buscar
+from modules.play_youtube import abrir as youtube_abrir
+from modules.play_spotify import abrir as spotify_abrir
+from modules.open_whatsapp import abrir as whatsapp_abrir
 from config import NOMBRE
 
 SALUDOS = [
-    f"Hola! Soy {NOMBRE}. En que te ayudo?",
-    f"Buenas! Aqui {NOMBRE}, dime.",
-    f"Hola! Dime que necesitas.",
+    f"¡Hola! Soy {NOMBRE}. ¿En qué te ayudo?",
+    f"¡Buenas! Aquí {NOMBRE}, dime.",
+    f"¡Hola! Dime qué necesitas.",
 ]
 
 _saludo_idx = 0
 
 
-def responder(texto: str) -> str:
+# 📌 CAMBIO CLAVE: Añadir ', page=None' para que acepte el parámetro de Flet
+def responder(texto: str, page=None) -> str:
     intencion, argumento = detectar_intencion(texto)
 
     if intencion == "saludo":
@@ -56,7 +60,14 @@ def responder(texto: str) -> str:
     if intencion == "wikipedia":
         return wiki_buscar(texto)
 
-    return (
-        f"No entendi eso.\n\n"
-        + texto_ayuda()
-    )
+    # 📌 CAMBIO CLAVE: Pasar el objeto 'page' a tus tres nuevos módulos móviles
+    if intencion == "youtube":
+        return youtube_abrir(texto, page)
+
+    if intencion == "spotify":
+        return spotify_abrir(texto, page)
+
+    if intencion == "whatsapp":
+        return whatsapp_abrir(texto, page)
+
+    return f"No entendí eso.\n\n" + texto_ayuda()
