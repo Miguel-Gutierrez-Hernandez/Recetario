@@ -1,91 +1,110 @@
 # Boti — Asistente Personal
 
-Asistente de voz y texto construido con Python y Flet.
-Conectado a Notion, recetario propio, Wikipedia, YouTube y más.
+Boti es un asistente de voz y texto hecho en Python con Flet. Está pensado para gestionar notas, recetas, búsquedas y controles multimedia desde una única interfaz.
+
+- Interfaz de chat y paneles para notas, recetas y ajustes
+- Sincronización con Notion para notas y recetas
+- Integración local con SQLite para recetario y datos persistentes
+- Comandos de voz y texto con soporte para YouTube, Spotify, Wikipedia y más
 
 ---
 
 ## Requisitos
 
 - Python 3.12
-- Flet 0.80+ (con soporte para Flutter SDK)
-- Cuenta Anthropic (API key)
-- Notion (opcional)
+- Flet compatible con Flutter SDK
+- Cuenta Anthropic con API key
+- Cuenta Notion y bases de datos configuradas (opcional)
 
 ---
 
 ## Instalación
 
-git clone [https://github.com/tu-usuario/Recetario.git](https://github.com/tu-usuario/Recetario.git)
+```bash
+git clone https://github.com/tu-usuario/Recetario.git
 cd Recetario
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.ejemplo .env
-Edita .env con tus claves
+pip install -r src/boti/requirements.txt
+```
+
+> Nota: este repositorio no incluye un archivo `.env.ejemplo`. Crea manualmente un `.env` en la raíz del proyecto y agrega tus claves.
 
 ---
 
-## Arrancar
-Arrancar y CompilarUso local en Mac/PC:Bashsource .venv/bin/activate
-python src/boti/main.py
+## Configuración
 
-## Compilar para Android (Generar APK)
+Crea el archivo `.env` en la raíz del proyecto con las variables necesarias:
 
-flet build apk src/boti
-
----
-
-## Estructura
-Recetario/
-├── requirements.txt
-├── .env.ejemplo
-├── src/boti/
-│   ├── main.py                  # Enrutador y orquestador (Flet)
-│   ├── config.py                # Detección de plataforma, rutas blindadas y variables globales
-│   ├── flet.yaml                # Permisos de Android (Internet, Red) e info de la app
-│   ├── data/
-│   │   ├── boti.db              # Base de datos SQLite (Autogenerada)
-│   │   ├── claves.json          # Claves seguras para móvil (Autogenerado)
-│   │   └── alarma.mp3           # Sonido de alarma
-│   ├── modules/
-│   │   ├── brain.py             # Lógica central: Claude + intenciones
-│   │   ├── recipes.py           # Recetario (SQLite local)
-│   │   ├── write_note.py        # Guardar, borrar y sincronizar notas en Notion
-│   │   ├── search_wikipedia.py  # Búsqueda en Wikipedia
-│   │   ├── play_youtube.py      # Abrir vídeos en YouTube
-│   │   ├── time_tools.py        # Hora actual y alarmas
-│   │   └── open_apps.py         # Abrir apps y archivos
-│   ├── views/                   # Vistas de la interfaz (Chat, Notas, Recetas, Ajustes)
-│   └── utils/
-│       ├── keywords.py          # Diccionario de comandos e intenciones
-│       ├── listener.py          # Reconocimiento de voz (STT)
-│       ├── talk.py              # Síntesis de voz (TTS)
-│       └── write.py             # Utilidades de texto
-
-
-Fase,Estado,Contenido
-1,✅,Interfaz Flet + chat por texto + Claude
-2,✅,Recetario SQLite + integración total con Notion (Sincronización y Archivo)
-3,⏳,Voz: reconocimiento (STT) y síntesis (TTS)
-4,⏳,"Wikipedia, YouTube, Spotify, WhatsApp"
-5,✅,Build Android con persistencia local (flet build apk src/boti)
-
-# Notion (Fase 2 completada)
+```env
 NOTION_TOKEN=secret_...
 NOTION_NOTES_DB=id-de-tu-base-de-datos
 NOTION_RECIPES_DB=id-de-tu-base-de-datos
-
-# Spotify (Fase 4)
 SPOTIFY_CLIENT_ID=...
 SPOTIFY_CLIENT_SECRET=...
+```
+
+- `NOTION_TOKEN`: token de integración de Notion
+- `NOTION_NOTES_DB`: ID de la base de datos de notas
+- `NOTION_RECIPES_DB`: ID de la base de datos de recetas
+- `SPOTIFY_CLIENT_ID` y `SPOTIFY_CLIENT_SECRET`: opcionales para búsquedas en Spotify
+
+---
+
+## Ejecución local
+
+```bash
+source .venv/bin/activate
+python src/boti/main.py
+```
+
+---
+
+## Compilar para Android
+
+```bash
+flet build apk src/boti
+```
+
+---
+
+## Estructura principal
+
+```text
+Recetario/
+├── .env                    # Variables de entorno (no versionado)
+├── README.md
+├── src/boti/
+│   ├── main.py             # Enrutador y gestor principal de Flet
+│   ├── config.py           # Carga de entorno, detección de plataforma y rutas seguras
+│   ├── flet.yaml           # Configuración de Flet / Android
+│   ├── pyproject.toml      # Configuración del proyecto Flet
+│   ├── requirements.txt    # Dependencias Python
+│   ├── modules/            # Lógica de comandos e integraciones
+│   ├── views/              # Vistas de la interfaz
+│   └── utils/              # Utilidades de voz, texto y comandos
+```
+
+---
+
+## Funcionalidades clave
+
+- Chat de texto con Boti usando Claude
+- Recetario local con SQLite
+- Notas sincronizables con Notion
+- Búsqueda en Wikipedia
+- Reproducción de YouTube desde comandos
+- Control de música/Spotify
+- Manejo de hora y alarmas
+- Soporte multiplataforma local y Android
+
+---
 
 ## Comandos de ejemplo
 
-Escribes o dices,Boti hace
-receta de tortilla,Busca en el recetario local
-anota: comprar leche,Guarda la nota localmente y la envía a Notion con la hora exacta
-qué es la fotosíntesis,Busca en Wikipedia
-pon música de jazz,Abre YouTube
-qué hora es,Dice la hora actual
-Cualquier otra cosa,Responde Claude (Boti)
+- `receta de tortilla` → busca en el recetario local
+- `anota: comprar leche` → guarda la nota local y la sincroniza a Notion
+- `qué es la fotosíntesis` → busca en Wikipedia
+- `pon música de jazz` → abre YouTube
+- `qué hora es` → responde con la hora actual
+- cualquier otra cosa → responde Claude (Boti)
