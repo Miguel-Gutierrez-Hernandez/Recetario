@@ -1,14 +1,8 @@
 venv/
+.env
 __pycache__/
 *.pyc
-.env
-.vscode/
-dist/
 build/
-.DS_Store
-.buildozer
-bin
-buildozer.spec
-buildozer_output.txt
+.flet/
 
-src/boti/data
+.DS_Store

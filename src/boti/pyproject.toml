@@ -1,0 +1,11 @@
+[tool.flet]
+app_name = "Boti"
+app_version = "1.0.0"
+org = "com.tuusuario"
+description = "Asistente personal Boti"
+
+[tool.flet.android.permission]
+"android.permission.INTERNET" = true
+"android.permission.WRITE_EXTERNAL_STORAGE" = true
+"android.permission.ACCESS_FINE_LOCATION" = { maxSdkVersion = "30" }
+"android.permission.BLUETOOTH_SCAN" = { usesPermissionFlags = "neverForLocation" }

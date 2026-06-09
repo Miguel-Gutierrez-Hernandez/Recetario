@@ -1,0 +1,11 @@
+app:
+  name: "Boti"
+  version: "1.0.0"
+
+android:
+  permissions:
+    - android.permission.INTERNET
+    - android.permission.ACCESS_NETWORK_STATE
+
+display_name: "Boti Recetario"
+icon: "assets/Boti_icono_recetario.png" 
