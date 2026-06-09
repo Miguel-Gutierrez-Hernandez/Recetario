@@ -1,10 +1,10 @@
 # modules/recipes.py — Recetario SQLite con sync y borrado en Notion
+
 import sqlite3
 import threading
 import os
 from config import DB_PATH
 
-# ── Notion ────────────────────────────────────────────────
 _notion_cliente = None
 _notion_db_id   = None
 
@@ -14,24 +14,14 @@ def _inicializar_notion():
     try:
         from config import clave
         token = clave("NOTION_TOKEN")
-        db_id = clave("NOTION_NOTES_DB")
-        
-        # 📌 SI NO HAY CLAVES (Como pasa en Android al principio), ABORTAMOS AL INSTANTE
+        db_id = clave("NOTION_RECIPES_DB")
         if not token or not db_id:
-            _notion_cliente = None
-            _notion_db_id = None
-            print("⚠️ Notion no configurado. Trabajando en modo local.")
             return
-            
-        db_id = db_id.replace("-", "").strip()
         from notion_client import Client
         _notion_cliente = Client(auth=token)
         _notion_db_id   = db_id
-        print("✅ Cliente de Notion inicializado correctamente.")
-    except Exception as e:
-        _notion_cliente = None
-        _notion_db_id = None
-        print(f"❌ Error al inicializar Notion: {e}")
+    except Exception:
+        pass
 
 
 def _notion_disponible() -> bool:
@@ -41,7 +31,6 @@ def _notion_disponible() -> bool:
 def _sync_a_notion(nombre: str, ingredientes: str, pasos: str, etiquetas: str, rid: int):
     def _enviar():
         try:
-            # Creamos la página en Notion
             resultado = _notion_cliente.pages.create(
                 parent={"database_id": _notion_db_id},
                 properties={
@@ -72,10 +61,7 @@ def _sync_a_notion(nombre: str, ingredientes: str, pasos: str, etiquetas: str, r
                     },
                 ],
             )
-            # Extraemos el ID único de la página que Notion nos devuelve
             notion_page_id = resultado["id"]
-            
-            # Guardamos el ID en SQLite para poder borrarlo o editarlo en el futuro
             con = sqlite3.connect(DB_PATH)
             cur = con.cursor()
             cur.execute(
@@ -84,28 +70,26 @@ def _sync_a_notion(nombre: str, ingredientes: str, pasos: str, etiquetas: str, r
             )
             con.commit()
             con.close()
-        except Exception as e:
-            print(f"❌ Error al sincronizar con Notion: {e}")
-            
+        except Exception:
+            pass
     threading.Thread(target=_enviar, daemon=True).start()
 
 
 def _borrar_de_notion(notion_page_id: str):
     def _eliminar():
         try:
-            # En la API de Notion, eliminar equivale a archivar la página
             _notion_cliente.pages.update(
                 page_id=notion_page_id,
                 archived=True,
             )
-            print("✨ Receta archivada con éxito en Notion.")
-        except Exception as e:
-            print(f"❌ Error al intentar borrar de Notion: {e}")
-            
+        except Exception:
+            pass
     threading.Thread(target=_eliminar, daemon=True).start()
 
 
-# ── SQLite ────────────────────────────────────────────────
+def _conexion():
+    return sqlite3.connect(DB_PATH)
+
 
 RECETAS_INICIALES = [
     (
@@ -126,15 +110,37 @@ RECETAS_INICIALES = [
         "4. Mezcla con la pasta escurrida y sirve.",
         "pasta, italiana, rapida",
     ),
+    (
+        "Gazpacho",
+        "1kg tomates, 1 pepino, 1 pimiento rojo, 1 ajo, aceite, vinagre, sal",
+        "1. Trocea todos los vegetales.\n"
+        "2. Bate hasta obtener crema fina.\n"
+        "3. Anade aceite, vinagre y sal.\n"
+        "4. Refrigera minimo 1 hora.",
+        "tomate, fria, verano, vegetariana",
+    ),
+    (
+        "Arroz con leche",
+        "200g arroz, 1L leche, 150g azucar, canela, piel de limon",
+        "1. Calienta la leche con canela y limon.\n"
+        "2. Anade el arroz y baja el fuego.\n"
+        "3. Cocina 30-35 min removiendo.\n"
+        "4. Anade azucar los ultimos 5 min. Sirve frio.",
+        "postre, dulce, tradicional",
+    ),
+    (
+        "Lentejas con verduras",
+        "300g lentejas, zanahoria, puerro, patata, ajo, laurel, pimenton, aceite, sal",
+        "1. Pica las verduras en trozos medianos.\n"
+        "2. Sofrie ajo, puerro y zanahoria 5 min.\n"
+        "3. Anade lentejas, patata, laurel y pimenton.\n"
+        "4. Cubre con agua y cocina 35-40 min.",
+        "legumbre, cuchara, invierno, economica",
+    ),
 ]
 
 
-def _conexion():
-    return sqlite3.connect(DB_PATH)
-
-
 def inicializar():
-    """Crea la tabla, realiza migraciones y carga los datos iniciales."""
     con = _conexion()
     cur = con.cursor()
     cur.execute("""
@@ -149,8 +155,6 @@ def inicializar():
             creada          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    
-    # Sistema robusto de migraciones por si la base de datos local es antigua
     for col, defn in [
         ("sincronizada",   "INTEGER DEFAULT 0"),
         ("notion_page_id", "TEXT DEFAULT NULL"),
@@ -176,7 +180,8 @@ def inicializar():
 def buscar(texto: str) -> str:
     IGNORAR = {"receta", "de", "la", "el", "un", "una", "para", "con",
                "como", "hacer", "hago", "preparo", "cocinar", "plato", "se", "hace"}
-    palabras = [p for p in texto.lower().split() if p not in IGNORAR and len(p) > 2]
+    palabras = [p for p in texto.lower().split()
+                if p not in IGNORAR and len(p) > 2]
 
     con = _conexion()
     cur = con.cursor()
@@ -184,9 +189,14 @@ def buscar(texto: str) -> str:
     if not palabras:
         cur.execute("SELECT nombre, ingredientes, pasos FROM recetas LIMIT 3")
     else:
-        cond = " OR ".join(["nombre LIKE ? OR ingredientes LIKE ? OR etiquetas LIKE ?"] * len(palabras))
+        cond = " OR ".join(
+            ["nombre LIKE ? OR ingredientes LIKE ? OR etiquetas LIKE ?"] * len(palabras)
+        )
         vals = [v for p in palabras for v in (f"%{p}%", f"%{p}%", f"%{p}%")]
-        cur.execute(f"SELECT nombre, ingredientes, pasos FROM recetas WHERE {cond} LIMIT 3", vals)
+        cur.execute(
+            f"SELECT nombre, ingredientes, pasos FROM recetas WHERE {cond} LIMIT 3",
+            vals,
+        )
 
     filas = cur.fetchall()
     con.close()
@@ -259,7 +269,6 @@ def guardar_desde_texto(texto: str) -> str:
 
 
 def borrar(rid: int) -> str:
-    """Borra de la base de datos local y elimina la página vinculada en Notion."""
     con = _conexion()
     cur = con.cursor()
     cur.execute("SELECT nombre, notion_page_id FROM recetas WHERE id = ?", (rid,))
@@ -274,7 +283,6 @@ def borrar(rid: int) -> str:
     con.commit()
     con.close()
 
-    # Si la receta tenía una página en Notion asignada, la eliminamos también de allí
     if notion_page_id and _notion_disponible():
         _borrar_de_notion(notion_page_id)
         sufijo = " y archivada en Notion"
