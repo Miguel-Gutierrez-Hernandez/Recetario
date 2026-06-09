@@ -58,14 +58,16 @@ def main(page: ft.Page):
             ft.Container(
                 content=ft.Row(
                     controls=[
+                        # 📌 CAMBIO AQUÍ: Quitamos el cuadro con la letra "B" y ponemos tu logo redondo
                         ft.Container(
-                            content=ft.Text("B", size=20,
-                                            color=TEXT_ACC,
-                                            weight=ft.FontWeight.BOLD),
-                            width=36, height=36,
-                            bgcolor=BG_BOTI,
-                            border_radius=10,
-                            alignment=ft.Alignment(0, 0),
+                            content=ft.Image(
+                                src="/Boti_icono_logo.png",
+                                fit="contain",
+                            ),
+                            width=36,
+                            height=36,
+                            border_radius=18,  # Hace el avatar perfectamente circular
+                            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,  # Recorta los bordes de la imagen
                         ),
                         ft.Column(
                             controls=[
@@ -112,10 +114,15 @@ def main(page: ft.Page):
     page.appbar = ft.AppBar(
         title=ft.Row(
             controls=[
-                ft.CircleAvatar(
-                    content=ft.Icon(ft.Icons.SMART_TOY, color=TEXT_PRI),
-                    bgcolor=BG_BOTI,
-                    radius=18,
+                ft.Container(
+                    content=ft.Image(
+                        src="/Boti_icono_logo.png",
+                        fit="contain",  # 📌 CORRECCIÓN: String directo aquí también
+                    ),
+                    width=36,
+                    height=36,
+                    border_radius=18,
+                    clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
                 ),
                 ft.Text("Chat", size=18,
                         weight=ft.FontWeight.BOLD,
@@ -141,9 +148,8 @@ def main(page: ft.Page):
 
 # ── Ejecución unificada estándar de Flet ──────────────────
 if __name__ == "__main__":
+    # 📌 CAMBIO AQUÍ: Forzamos assets_dir="assets" en ambas plataformas para que renderice en Mac
     if IS_ANDROID:
-        # Android usa ft.app(target=...)
-        ft.app(target=main)
+        ft.app(target=main, assets_dir="assets")
     else:
-        # Tu Mac usa ft.run(...) sin el texto 'target='
-        ft.run(main)
+        ft.app(target=main, assets_dir="assets")

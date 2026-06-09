@@ -1,12 +1,5 @@
 # modules/search_wikipedia.py — Búsqueda en Wikipedia (resumen corto)
 
-import wikipediaapi
-
-_wiki = wikipediaapi.Wikipedia(
-    language="es",
-    user_agent="Boti-AsistentePersonal/1.0"
-)
-
 # Palabras que se eliminan del texto para extraer el término de búsqueda
 _PALABRAS_CLAVE = [
     "qué es", "que es", "quién es", "quien es",
@@ -23,6 +16,15 @@ def buscar(texto: str) -> str:
     Extrae el término del texto, busca en Wikipedia en español
     y devuelve un resumen de 2-3 frases.
     """
+    try:
+        import wikipediaapi
+        _wiki = wikipediaapi.Wikipedia(
+            language="es",
+            user_agent="Boti-AsistentePersonal/1.0"
+        )
+    except ImportError:
+        return "⚠️ Error: La librería de Wikipedia no está instalada en este dispositivo."
+    
     termino = _extraer_termino(texto)
 
     if not termino:

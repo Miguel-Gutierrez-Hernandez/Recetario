@@ -1,7 +1,4 @@
 flet>=0.21.0
 notion-client>=2.2.3
-SpeechRecognition>=3.10.0
-pyttsx3>=2.90
 wikipedia-api>=0.6.0
-gTTS>=2.5.0
 python-dotenv>=1.0.0
