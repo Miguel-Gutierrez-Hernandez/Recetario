@@ -40,13 +40,13 @@ def responder(texto: str, page=None) -> str:
         return recipes.aniadir_interactivo()
 
     if intencion == "nota_guardar":
-        return write_note.guardar(texto)
+        return write_note.guardar_nota(texto)
 
     if intencion == "nota_listar":
-        return write_note.listar()
+        return write_note.listar_notas()
 
     if intencion == "nota_borrar":
-        return write_note.borrar(argumento)
+        return write_note.borrar_nota(argumento)
 
     if intencion == "hora_actual":
         return time_tools.hora_actual()

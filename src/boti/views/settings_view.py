@@ -71,7 +71,7 @@ def obtener_settings_view(page: ft.Page) -> ft.Column:
         fila_recetas.content = None
         page.update()
 
-        from modules.notion_debug import comprobar
+        from boti.utils.notion_debug import comprobar
         comprobar(_actualizar_diagnostico)
 
     # ── Campos de claves ──────────────────────────────────
@@ -124,7 +124,7 @@ def obtener_settings_view(page: ft.Page) -> ft.Column:
             config.CLAVES.update(nuevas)
 
             # ── Bug 2 fix: reinicializa los clientes Notion ──
-            from modules.notion_debug import reinicializar_modulos
+            from boti.utils.notion_debug import reinicializar_modulos
             reinicializar_modulos()
 
             msg_ok.value = "Guardado. Comprueba la conexion con el boton de abajo."
